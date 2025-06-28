@@ -1,0 +1,32 @@
+name: Daily Study Notes Email
+
+on:
+  schedule:
+    # Runs daily at 9:00 AM IST (3:30 AM UTC)
+    - cron: "30 3 * * *"
+  workflow_dispatch: # Manual trigger option
+
+jobs:
+  send-email:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Send random note email
+        env:
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          TO_EMAIL: ${{ secrets.TO_EMAIL }}
+        run: python scripts/send_random_note.py

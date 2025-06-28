@@ -1,0 +1,20 @@
+[
+  {
+    "title": "ACID Properties",
+    "category": "Database Management",
+    "content": "Fundamental properties ensuring database transaction reliability.\n\nAtomicity: All or nothing execution\n• Transaction completes fully or not at all\n• No partial updates\n\nConsistency: Database remains in valid state\n• All constraints satisfied before and after\n\nIsolation: Concurrent transactions don't interfere\n• Each transaction sees consistent view\n\nDurability: Committed changes persist\n• Survive system crashes",
+    "example": "Bank transfer: Debit account A, Credit account B - both must succeed or both fail (Atomicity)"
+  },
+  {
+    "title": "Normalization",
+    "category": "Database Management",
+    "content": "Process of organizing data to reduce redundancy and improve data integrity.\n\n1NF: Atomic values, no repeating groups\n2NF: 1NF + no partial dependencies on primary key\n3NF: 2NF + no transitive dependencies\nBCNF: 3NF + every determinant is candidate key\n\nBenefits:\n• Reduced data redundancy\n• Improved data consistency\n• Easier maintenance\n\nTrade-off: May require more joins",
+    "example": "Student table: Split into Student(ID, Name) and Enrollment(StudentID, CourseID, Grade)"
+  },
+  {
+    "title": "Indexing",
+    "category": "Database Management",
+    "content": "Data structure to improve query performance.\n\nTypes:\n• Primary Index: On primary key\n• Secondary Index: On non-key attributes\n• Clustered: Data stored in index order\n• Non-clustered: Index points to data\n\nStructures:\n• B+ Trees: Most common, balanced\n• Hash Index: Fast equality lookups\n• Bitmap Index: For low cardinality data\n\nTrade-offs:\n• Faster SELECT queries\n• Slower INSERT/UPDATE/DELETE",
+    "example": "Index on 'email' column enables fast user lookup: O(log n) instead of O(n)"
+  }
+]

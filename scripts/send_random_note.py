@@ -6,142 +6,168 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 import sys
-import locale
 
-# Force UTF-8 encoding
-os.environ['PYTHONIOENCODING'] = 'utf-8'
-locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+def safe_str(text):
+    """Convert any text to ASCII-safe string"""
+    if not isinstance(text, str):
+        text = str(text)
 
-# Set UTF-8 encoding for stdout/stderr
-if hasattr(sys.stdout, 'reconfigure'):
-    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-if hasattr(sys.stderr, 'reconfigure'):
-    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    # Remove or replace problematic Unicode characters
+    replacements = {
+        '\xa0': ' ',           # Non-breaking space
+        '\u2019': "'",         # Right single quotation mark
+        '\u2018': "'",         # Left single quotation mark
+        '\u201c': '"',         # Left double quotation mark
+        '\u201d': '"',         # Right double quotation mark
+        '\u2013': '-',         # En dash
+        '\u2014': '--',        # Em dash
+        '\u2026': '...',       # Horizontal ellipsis
+        '\u2022': '*',         # Bullet point
+        '\u00a9': '(c)',       # Copyright symbol
+        '\u00ae': '(R)',       # Registered trademark
+        '\u2122': '(TM)',      # Trademark symbol
+    }
 
-def clean_text(text):
-    """Clean text by removing problematic Unicode characters and normalizing"""
-    if isinstance(text, str):
-        # Replace non-breaking space with regular space
-        text = text.replace('\xa0', ' ')
-        # Replace other problematic Unicode characters
-        text = text.replace('\u2019', "'")  # Right single quotation mark
-        text = text.replace('\u2018', "'")  # Left single quotation mark
-        text = text.replace('\u201c', '"')  # Left double quotation mark
-        text = text.replace('\u201d', '"')  # Right double quotation mark
-        text = text.replace('\u2013', '-')  # En dash
-        text = text.replace('\u2014', '--') # Em dash
-        text = text.replace('\u2026', '...') # Horizontal ellipsis
-        # Remove any other non-ASCII characters that might cause issues
-        text = text.encode('ascii', 'ignore').decode('ascii')
-        # Normalize multiple spaces
-        text = ' '.join(text.split())
-    return text
+    for unicode_char, replacement in replacements.items():
+        text = text.replace(unicode_char, replacement)
 
-def safe_print(message):
-    """Print function that handles Unicode characters safely"""
+    # Convert to ASCII, ignoring any remaining problematic characters
     try:
-        print(message)
-    except UnicodeEncodeError:
-        # If regular print fails, encode to ASCII with replacement
-        safe_message = str(message).encode('ascii', 'replace').decode('ascii')
-        print(safe_message)
+        text = text.encode('ascii', 'ignore').decode('ascii')
+    except:
+        # If all else fails, keep only basic ASCII characters
+        text = ''.join(char for char in text if ord(char) < 128)
+
+    # Clean up extra whitespace
+    return ' '.join(text.split())
 
 def load_all_notes():
-    """Load all notes from JSON files"""
+    """Load all notes from JSON files with safe encoding"""
     notes = []
     notes_dir = 'notes'
 
     try:
-        for filename in os.listdir(notes_dir):
-            if filename.endswith('.json'):
-                file_path = f'{notes_dir}/{filename}'
-                safe_print(f"📁 Loading {filename}...")
+        if not os.path.exists(notes_dir):
+            print(f"Notes directory '{notes_dir}' not found!")
+            return []
 
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    category_notes = json.load(f)
+        json_files = [f for f in os.listdir(notes_dir) if f.endswith('.json')]
 
-                    # Clean all text fields in each note
-                    for note in category_notes:
-                        note['title'] = clean_text(note.get('title', ''))
-                        note['category'] = clean_text(note.get('category', ''))
-                        note['content'] = clean_text(note.get('content', ''))
-                        if 'example' in note:
-                            note['example'] = clean_text(note.get('example', ''))
+        if not json_files:
+            print("No JSON files found in notes directory!")
+            return []
 
-                    notes.extend(category_notes)
-                    safe_print(f"✅ Loaded {len(category_notes)} notes from {filename}")
+        for filename in json_files:
+            file_path = os.path.join(notes_dir, filename)
+            print(f"Loading {filename}...")
 
-        safe_print(f"📚 Total notes loaded: {len(notes)}")
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                    # Clean the entire JSON content first
+                    content = safe_str(content)
+                    category_notes = json.loads(content)
+
+                # Clean each note's fields
+                cleaned_notes = []
+                for note in category_notes:
+                    cleaned_note = {
+                        'title': safe_str(note.get('title', 'Untitled')),
+                        'category': safe_str(note.get('category', 'General')),
+                        'content': safe_str(note.get('content', 'No content')),
+                    }
+                    if 'example' in note and note['example']:
+                        cleaned_note['example'] = safe_str(note.get('example', ''))
+
+                    cleaned_notes.append(cleaned_note)
+
+                notes.extend(cleaned_notes)
+                print(f"Loaded {len(cleaned_notes)} notes from {filename}")
+
+            except json.JSONDecodeError as e:
+                print(f"JSON error in {filename}: {e}")
+                continue
+            except Exception as e:
+                print(f"Error loading {filename}: {e}")
+                continue
+
+        print(f"Total notes loaded: {len(notes)}")
         return notes
 
     except Exception as e:
-        safe_print(f"❌ Error loading notes: {str(e)}")
+        print(f"Error accessing notes directory: {e}")
         return []
 
 def create_email_content(note):
-    """Create HTML email content with proper encoding"""
+    """Create HTML email content with safe ASCII content"""
 
-    # Ensure all note fields are properly cleaned
-    title = clean_text(note.get('title', 'Untitled'))
-    category = clean_text(note.get('category', 'General'))
-    content = clean_text(note.get('content', 'No content available'))
-    example = clean_text(note.get('example', '')) if note.get('example') else ''
+    title = note.get('title', 'Study Note')
+    category = note.get('category', 'General')
+    content = note.get('content', 'No content available')
+    example = note.get('example', '')
 
-    # Convert newlines to HTML breaks for content
+    # Convert newlines to HTML breaks
     content_html = content.replace('\n', '<br>')
 
-    html = f"""
-    <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-      </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
-            📚 Daily Study Revision
-          </h2>
+    # Build example section if it exists
+    example_section = ''
+    if example:
+        example_html = example.replace('<', '&lt;').replace('>', '&gt;')
+        example_section = f'''
+        <div style="background-color: white; padding: 15px; border-radius: 5px; margin-top: 15px;">
+            <h4 style="color: #f39c12; margin-top: 0;">Example:</h4>
+            <div style="background-color: #f1f2f6; padding: 10px; border-radius: 3px; font-family: monospace;">
+                {example_html}
+            </div>
+        </div>'''
 
-          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    html = f'''<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Daily Study Note</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+            Daily Study Revision
+        </h2>
+
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #e74c3c; margin-top: 0;">
-              🎯 {title}
+                {title}
             </h3>
 
             <div style="background-color: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
-              <p style="margin: 0;"><strong>Category:</strong>
-                <span style="background-color: #3498db; color: white; padding: 3px 8px; border-radius: 3px; font-size: 12px;">
-                  {category}
-                </span>
-              </p>
+                <p style="margin: 0;"><strong>Category:</strong>
+                    <span style="background-color: #3498db; color: white; padding: 3px 8px; border-radius: 3px; font-size: 12px;">
+                        {category}
+                    </span>
+                </p>
             </div>
 
             <div style="background-color: white; padding: 15px; border-radius: 5px;">
-              <h4 style="color: #27ae60; margin-top: 0;">📝 Content:</h4>
-              <div style="font-size: 14px;">
-                {content_html}
-              </div>
+                <h4 style="color: #27ae60; margin-top: 0;">Content:</h4>
+                <div style="font-size: 14px;">
+                    {content_html}
+                </div>
             </div>
 
-            {f'''<div style="background-color: white; padding: 15px; border-radius: 5px; margin-top: 15px;">
-            <h4 style="color: #f39c12; margin-top: 0;">💡 Example:</h4>
-            <div style="background-color: #f1f2f6; padding: 10px; border-radius: 3px; font-family: monospace;">
-            {example.replace('<', '&lt;').replace('>', '&gt;')}
-            </div>
-            </div>''' if example else ''}
-          </div>
+            {example_section}
+        </div>
 
-          <div style="text-align: center; margin-top: 30px; padding: 15px; background-color: #ecf0f1; border-radius: 5px;">
+        <div style="text-align: center; margin-top: 30px; padding: 15px; background-color: #ecf0f1; border-radius: 5px;">
             <p style="margin: 0; color: #7f8c8d; font-size: 12px;">
-              ⏰ Sent on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
+                Sent on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
             </p>
             <p style="margin: 5px 0 0 0; color: #7f8c8d; font-size: 12px;">
-              Keep studying! 💪 Next email tomorrow!
+                Keep studying! Next email tomorrow!
             </p>
-          </div>
         </div>
-      </body>
-    </html>
-    """
+    </div>
+</body>
+</html>'''
+
     return html
 
 def send_email(note):
@@ -151,69 +177,61 @@ def send_email(note):
     to_email = os.getenv('TO_EMAIL')
 
     if not all([email_user, email_pass, to_email]):
-        raise ValueError("Missing email configuration. Check your GitHub secrets.")
+        raise ValueError("Missing email configuration. Check EMAIL_USER, EMAIL_PASS, and TO_EMAIL environment variables.")
 
-    # Clean the title for the subject line
-    clean_title = clean_text(note.get('title', 'Study Note'))
+    title = note.get('title', 'Study Note')
 
+    # Create message
     msg = MIMEMultipart('alternative')
-    msg['Subject'] = f"📚 Daily Revision: {clean_title}"
+    msg['Subject'] = f"Daily Revision: {title}"
     msg['From'] = email_user
     msg['To'] = to_email
 
-    # Set charset to UTF-8
-    msg.set_charset('utf-8')
-
+    # Create HTML content
     html_content = create_email_content(note)
     html_part = MIMEText(html_content, 'html', 'utf-8')
     msg.attach(html_part)
 
     try:
-        # Gmail SMTP with better error handling
-        safe_print("📧 Connecting to Gmail SMTP...")
+        print("Connecting to Gmail SMTP...")
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(email_user, email_pass)
 
-        safe_print("📤 Sending email...")
+        print("Sending email...")
         server.send_message(msg)
         server.quit()
 
-        safe_print(f"✅ Email sent successfully: {clean_title}")
+        print(f"Email sent successfully: {title}")
 
     except smtplib.SMTPAuthenticationError:
-        safe_print("❌ SMTP Authentication failed. Check your email credentials.")
-        raise
-    except smtplib.SMTPException as e:
-        safe_print(f"❌ SMTP Error: {str(e)}")
+        print("SMTP Authentication failed. Check your email credentials.")
         raise
     except Exception as e:
-        safe_print(f"❌ Unexpected error: {str(e)}")
+        print(f"Error sending email: {e}")
         raise
 
 def main():
     try:
-        safe_print("🚀 Starting Study Notes Emailer...")
+        print("Starting Study Notes Emailer...")
 
+        # Load notes
         notes = load_all_notes()
         if not notes:
-            safe_print("❌ No notes found!")
-            return
+            print("No notes found! Please add some notes to the notes/ directory.")
+            sys.exit(1)
 
-        safe_print("🎲 Selecting random note...")
+        # Select random note
         random_note = random.choice(notes)
+        print(f"Selected note: {random_note.get('title', 'Unknown')}")
+        print(f"Category: {random_note.get('category', 'Unknown')}")
 
-        safe_print(f"📚 Selected: {clean_text(random_note.get('title', 'Unknown'))}")
-        safe_print(f"📂 Category: {clean_text(random_note.get('category', 'Unknown'))}")
-
+        # Send email
         send_email(random_note)
-        safe_print("🎉 Process completed successfully!")
+        print("Process completed successfully!")
 
     except Exception as e:
-        safe_print(f"❌ Error: {str(e)}")
-        # Print more detailed error info for debugging
-        import traceback
-        traceback.print_exc()
+        print(f"Error: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":

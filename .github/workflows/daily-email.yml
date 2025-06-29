@@ -29,4 +29,11 @@ jobs:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           TO_EMAIL: ${{ secrets.TO_EMAIL }}
-        run: python scripts/send_random_note.py
+          PYTHONIOENCODING: utf-8
+          LC_ALL: C.UTF-8
+          LANG: C.UTF-8
+        run: |
+          export PYTHONIOENCODING=utf-8
+          export LC_ALL=C.UTF-8
+          export LANG=C.UTF-8
+          python scripts/send_random_note.py

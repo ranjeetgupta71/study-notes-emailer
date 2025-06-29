@@ -6,10 +6,17 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 import sys
+import locale
 
-# Set UTF-8 encoding for stdout
-if sys.stdout.encoding != 'utf-8':
-    sys.stdout.reconfigure(encoding='utf-8')
+# Force UTF-8 encoding
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+
+# Set UTF-8 encoding for stdout/stderr
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
 def clean_text(text):
     """Clean text by removing problematic Unicode characters and normalizing"""
@@ -24,9 +31,20 @@ def clean_text(text):
         text = text.replace('\u2013', '-')  # En dash
         text = text.replace('\u2014', '--') # Em dash
         text = text.replace('\u2026', '...') # Horizontal ellipsis
+        # Remove any other non-ASCII characters that might cause issues
+        text = text.encode('ascii', 'ignore').decode('ascii')
         # Normalize multiple spaces
         text = ' '.join(text.split())
     return text
+
+def safe_print(message):
+    """Print function that handles Unicode characters safely"""
+    try:
+        print(message)
+    except UnicodeEncodeError:
+        # If regular print fails, encode to ASCII with replacement
+        safe_message = str(message).encode('ascii', 'replace').decode('ascii')
+        print(safe_message)
 
 def load_all_notes():
     """Load all notes from JSON files"""
@@ -37,7 +55,7 @@ def load_all_notes():
         for filename in os.listdir(notes_dir):
             if filename.endswith('.json'):
                 file_path = f'{notes_dir}/{filename}'
-                print(f"📁 Loading {filename}...")
+                safe_print(f"📁 Loading {filename}...")
 
                 with open(file_path, 'r', encoding='utf-8') as f:
                     category_notes = json.load(f)
@@ -51,13 +69,13 @@ def load_all_notes():
                             note['example'] = clean_text(note.get('example', ''))
 
                     notes.extend(category_notes)
-                    print(f"✅ Loaded {len(category_notes)} notes from {filename}")
+                    safe_print(f"✅ Loaded {len(category_notes)} notes from {filename}")
 
-        print(f"📚 Total notes loaded: {len(notes)}")
+        safe_print(f"📚 Total notes loaded: {len(notes)}")
         return notes
 
     except Exception as e:
-        print(f"❌ Error loading notes: {str(e)}")
+        safe_print(f"❌ Error loading notes: {str(e)}")
         return []
 
 def create_email_content(note):
@@ -152,47 +170,47 @@ def send_email(note):
 
     try:
         # Gmail SMTP with better error handling
-        print("📧 Connecting to Gmail SMTP...")
+        safe_print("📧 Connecting to Gmail SMTP...")
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(email_user, email_pass)
 
-        print("📤 Sending email...")
+        safe_print("📤 Sending email...")
         server.send_message(msg)
         server.quit()
 
-        print(f"✅ Email sent successfully: {clean_title}")
+        safe_print(f"✅ Email sent successfully: {clean_title}")
 
     except smtplib.SMTPAuthenticationError:
-        print("❌ SMTP Authentication failed. Check your email credentials.")
+        safe_print("❌ SMTP Authentication failed. Check your email credentials.")
         raise
     except smtplib.SMTPException as e:
-        print(f"❌ SMTP Error: {str(e)}")
+        safe_print(f"❌ SMTP Error: {str(e)}")
         raise
     except Exception as e:
-        print(f"❌ Unexpected error: {str(e)}")
+        safe_print(f"❌ Unexpected error: {str(e)}")
         raise
 
 def main():
     try:
-        print("🚀 Starting Study Notes Emailer...")
+        safe_print("🚀 Starting Study Notes Emailer...")
 
         notes = load_all_notes()
         if not notes:
-            print("❌ No notes found!")
+            safe_print("❌ No notes found!")
             return
 
-        print("🎲 Selecting random note...")
+        safe_print("🎲 Selecting random note...")
         random_note = random.choice(notes)
 
-        print(f"📚 Selected: {clean_text(random_note.get('title', 'Unknown'))}")
-        print(f"📂 Category: {clean_text(random_note.get('category', 'Unknown'))}")
+        safe_print(f"📚 Selected: {clean_text(random_note.get('title', 'Unknown'))}")
+        safe_print(f"📂 Category: {clean_text(random_note.get('category', 'Unknown'))}")
 
         send_email(random_note)
-        print("🎉 Process completed successfully!")
+        safe_print("🎉 Process completed successfully!")
 
     except Exception as e:
-        print(f"❌ Error: {str(e)}")
+        safe_print(f"❌ Error: {str(e)}")
         # Print more detailed error info for debugging
         import traceback
         traceback.print_exc()

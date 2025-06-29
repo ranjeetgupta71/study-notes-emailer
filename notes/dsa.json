@@ -2,25 +2,25 @@
   {
     "title": "Morris Traversal",
     "category": "DSA",
-    "content": "Morris Traversal uses threading to achieve O(1) space complexity.\n\nKey Points:\n• Create temporary threads using right pointers\n• Predecessor = rightmost node in left subtree\n• Time: O(n), Space: O(1)\n• Remove threads to restore original structure\n\nAlgorithm:\n1. If left child is NULL: print current, go right\n2. If left child exists: find predecessor\n3. If predecessor.right is NULL: create thread, go left\n4. If predecessor.right points to current: remove thread, print, go right",
+    "content": "Morris Traversal uses threading to achieve O(1) space complexity.\n\nKey Points:\n* Create temporary threads using right pointers\n* Predecessor = rightmost node in left subtree\n* Time: O(n), Space: O(1)\n* Remove threads to restore original structure\n\nAlgorithm:\n1. If left child is NULL: print current, go right\n2. If left child exists: find predecessor\n3. If predecessor.right is NULL: create thread, go left\n4. If predecessor.right points to current: remove thread, print, go right",
     "example": "Tree: 1->2->4->6 (threading), then 6->4->2->1 (removing threads)"
   },
   {
     "title": "Topological Sort",
     "category": "DSA",
-    "content": "Linear ordering of vertices in a Directed Acyclic Graph (DAG).\n\nAlgorithms:\n• Kahn's Algorithm (BFS approach using indegree)\n• DFS approach (using stack)\n\nApplications:\n• Course scheduling\n• Build systems\n• Dependency resolution\n• Task scheduling",
+    "content": "Linear ordering of vertices in a Directed Acyclic Graph (DAG).\n\nAlgorithms:\n* Kahn's Algorithm (BFS approach using indegree)\n* DFS approach (using stack)\n\nApplications:\n* Course scheduling\n* Build systems\n* Dependency resolution\n* Task scheduling",
     "example": "Course prerequisites: [Math->Physics, Physics->Chemistry] gives order: Math, Physics, Chemistry"
   },
   {
     "title": "Binary Search",
     "category": "DSA",
-    "content": "Divide and conquer algorithm for searching in sorted arrays.\n\nTime Complexity: O(log n)\nSpace Complexity: O(1) iterative, O(log n) recursive\n\nKey Points:\n• Array must be sorted\n• Compare with middle element\n• Eliminate half of search space in each iteration\n• Handle edge cases: empty array, single element",
+    "content": "Divide and conquer algorithm for searching in sorted arrays.\n\nTime Complexity: O(log n)\nSpace Complexity: O(1) iterative, O(log n) recursive\n\nKey Points:\n* Array must be sorted\n* Compare with middle element\n* Eliminate half of search space in each iteration\n* Handle edge cases: empty array, single element",
     "example": "Array: [1,3,5,7,9], Target: 5\nSteps: mid=5 (found!), return index 2"
   },
   {
     "title": "Quick Sort",
     "category": "DSA",
-    "content": "Divide and conquer sorting algorithm.\n\nTime Complexity:\n• Best/Average: O(n log n)\n• Worst: O(n²)\nSpace: O(log n) due to recursion\n\nAlgorithm:\n1. Choose pivot element\n2. Partition array around pivot\n3. Recursively sort subarrays\n\nOptimizations:\n• Random pivot selection\n• 3-way partitioning for duplicates",
+    "content": "Divide and conquer sorting algorithm.\n\nTime Complexity:\n* Best/Average: O(n log n)\n* Worst: O(n)\nSpace: O(log n) due to recursion\n\nAlgorithm:\n1. Choose pivot element\n2. Partition array around pivot\n3. Recursively sort subarrays\n\nOptimizations:\n* Random pivot selection\n* 3-way partitioning for duplicates",
     "example": "Array: [3,6,8,10,1,2,1] -> Pivot=3 -> [1,2,1] 3 [6,8,10]"
   }
 ]

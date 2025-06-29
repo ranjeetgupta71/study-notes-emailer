@@ -2,19 +2,19 @@
   {
     "title": "Process vs Thread",
     "category": "Operating Systems",
-    "content": "Process: Independent execution unit with separate memory space\nThread: Lightweight execution unit sharing memory space\n\nProcess characteristics:\n• Separate memory space\n• Higher creation overhead\n• Inter-process communication needed\n• Crash doesn't affect other processes\n\nThread characteristics:\n• Shared memory space\n• Lower creation overhead\n• Direct communication via shared memory\n• Crash can affect entire process",
+    "content": "Process: Independent execution unit with separate memory space\nThread: Lightweight execution unit sharing memory space\n\nProcess characteristics:\n* Separate memory space\n* Higher creation overhead\n* Inter-process communication needed\n* Crash doesn't affect other processes\n\nThread characteristics:\n* Shared memory space\n* Lower creation overhead\n* Direct communication via shared memory\n* Crash can affect entire process",
     "example": "Browser: Each tab = process, JavaScript execution = thread within tab process"
   },
   {
     "title": "Deadlock",
     "category": "Operating Systems",
     "content": "Situation where processes wait indefinitely for resources held by each other.\n\nCoffman Conditions (all must be true):\n1. Mutual Exclusion\n2. Hold and Wait\n3. No Preemption\n4. Circular Wait\n\nPrevention: Break any one condition\nAvoidance: Banker's Algorithm\nDetection: Resource allocation graph\nRecovery: Process termination or resource preemption",
-    "example": "Process A holds Resource 1, needs Resource 2\nProcess B holds Resource 2, needs Resource 1\n→ Deadlock!"
+    "example": "Process A holds Resource 1, needs Resource 2\nProcess B holds Resource 2, needs Resource 1\n Deadlock!"
   },
   {
     "title": "Virtual Memory",
     "category": "Operating Systems",
-    "content": "Technique to use secondary storage as extension of main memory.\n\nBenefits:\n• Programs larger than physical memory can run\n• Multiple programs can run simultaneously\n• Memory protection between processes\n\nImplementation:\n• Paging: Fixed-size blocks\n• Segmentation: Variable-size blocks\n• Page replacement algorithms: FIFO, LRU, Optimal\n\nPage fault: When requested page not in memory",
+    "content": "Technique to use secondary storage as extension of main memory.\n\nBenefits:\n* Programs larger than physical memory can run\n* Multiple programs can run simultaneously\n* Memory protection between processes\n\nImplementation:\n* Paging: Fixed-size blocks\n* Segmentation: Variable-size blocks\n* Page replacement algorithms: FIFO, LRU, Optimal\n\nPage fault: When requested page not in memory",
     "example": "4GB program running on 2GB RAM using virtual memory with disk storage"
   }
 ]
